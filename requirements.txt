@@ -1,3 +1,4 @@
 PyYAML
 Requests
+telegram
 python-telegram-bot

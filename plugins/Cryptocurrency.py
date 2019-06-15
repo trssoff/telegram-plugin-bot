@@ -11,7 +11,9 @@ class Cryptocurrency:
         self.description = "I'm a Cryptocurrency plugin."
         self.help_text = "Write /crypto pair to receive current price!"
 
-    def __cryptonator__(self, crypto_list=['btc-usd', 'eth-usd', 'xrp-usd']):
+    def __cryptonator__(self, crypto_list=None):
+        if crypto_list is None:
+            crypto_list = ['btc-usd', 'eth-usd', 'xrp-usd']
         import json
         import requests
 
@@ -31,6 +33,7 @@ class Cryptocurrency:
 
     def cryptocurrency(self, bot, update, args):
         import telegram
+
         if args:
             result = self.__cryptonator__(args)
         else:
