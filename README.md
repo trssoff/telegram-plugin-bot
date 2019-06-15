@@ -1,7 +1,7 @@
 
 <h1 align="center">
   <br>
-    <a href="https://github.com/trssoff/telegram-plugin-bot"><img src="https://github.com/trssoff/telegram-plugin-bot/raw/master/.github/logo.png" alt="Telegran Plugin Bot" width="200"></a>
+    <a href="https://github.com/trssoff/telegram-plugin-bot"><img src="https://github.com/trssoff/telegram-plugin-bot/raw/master/.github/logo.png" alt="Telegran Plugin Bot"></a>
   <br>
   Telegram bot with a plugin based architecture
   <br>

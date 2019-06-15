@@ -1,4 +1,4 @@
-class hello():
+class Hello:
     def __init__(self):
         self.config = []
         self.commands = {
