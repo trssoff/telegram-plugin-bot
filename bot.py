@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import importlib, sys, utils, logging, os, yaml, datetime
+from importlib import util
+
 from threading import Thread
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
@@ -25,7 +27,7 @@ class Bot:
 
         self.__setup()
 
-    def __save_plugin_config(self, bot, job):
+    def __save_plugin_config(self, job):
         for plugin in self.plugins:
             try:
                 plugin_name = plugin.__class__.__name__
@@ -39,7 +41,7 @@ class Bot:
         with open('config.yaml', 'w') as file:
             yaml.dump(self.config, file)
 
-    def __print_info(self, bot, update):
+    def __print_info(self, update, context):
         text = "<b>Michael Tarassov</b> <i>v" + self.version + "</i>\n\n"\
             + "Plugin-based Telegram bot written in <b>Python</b> by " + self.autor + ".\n"\
             + "<a href='https://github.com/trssoff/telegram-plugin-bot'>Fork me on GitHub!</a>"
@@ -47,7 +49,7 @@ class Bot:
 
     def __validate_and_load_config(self):
         try:
-            self.updater = Updater(self.config['TELEGRAM_API_TOKEN'],
+            self.updater = Updater(self.config['TELEGRAM_API_TOKEN'], use_context=True,
                                    user_sig_handler=self.__emergency_stop)
         except ValueError:
             utils.pprint('Missing API token! Write it in the config.json file')
@@ -59,35 +61,37 @@ class Bot:
             return -1
         return 0
 
-    def __enable_plugin(self, bot, update, args):
+    def __enable_plugin(self, update, context):
         if str(update.message.from_user.id) not in self.config['admin_list']:
             update.message.reply_text("You don't have enough privileges!")
             return
 
-        if not len(args):
+        if not len(context.args):
             update.message.reply_text("No plugin specified!")
             return
 
-        if importlib.util.find_spec(args[0]) is not None:
-            self.config['plugin_list'].append(args[0])
+        print(context.args[0])
+
+        if util.find_spec(context.args[0]) is not None:
+            self.config['plugin_list'].append(context.args[0])
             update.message.reply_text("Plugin enabled. Restarting bot...")
-            self.__restart()
+            self.__restart(update, context)
         else:
             update.message.reply_text("Plugin not found.")
 
-    def __disable_plugin(self, bot, update, args):
+    def __disable_plugin(self, update, context):
         if str(update.message.from_user.id) not in self.config['admin_list']:
             update.message.reply_text("You don't have enough privileges!")
             return
 
-        if not len(args):
+        if not len(context.args):
             update.message.reply_text("No plugin specified!")
             return
 
-        if args[0] in self.config['plugin_list']:
-            self.config['plugin_list'].remove(args[0])
+        if context.args[0] in self.config['plugin_list']:
+            self.config['plugin_list'].remove(context.args[0])
             update.message.reply_text("Plugin disabled. Restarting bot...")
-            self.__restart()
+            self.__restart(update, context)
         else:
             update.message.reply_text("Plugin not found.")
 
@@ -106,16 +110,15 @@ class Bot:
         self.updater.start_polling()
         self.updater.idle()
 
-    def __emergency_stop(self, signum = None, frame = None):
+    def __emergency_stop(self):
         self.stop()
 
-    def stop(self, bot = None, update = None):
-        if bot is not None and update is not None:
-            if str(update.message.from_user.id) not in self.config['admin_list']:
-                update.message.reply_text("You don't have enough privileges!")
-                return
-            update.message.reply_text("Stopping bot.")
-            logging.info('stopping bot.')
+    def stop(self, update, context):
+        if str(update.message.from_user.id) not in self.config['admin_list']:
+            update.message.reply_text("You don't have enough privileges!")
+            return
+        update.message.reply_text("Stopping bot.")
+        logging.info('stopping bot.')
         self.updater.stop()
 
     def __stop_and_restart(self):
@@ -123,14 +126,12 @@ class Bot:
         self.updater.stop()
         os.execl(sys.executable, sys.executable, *sys.argv)
 
-    def __restart(self, bot = None, update = None):
+    def __restart(self, update, context):
         self.__save_config()
-        if bot is not None and update is not None:
-            bot.send_chat_action(chat_id=update.message.chat_id, action='typing')
-            if str(update.message.from_user.id) not in self.config['admin_list']:
-                update.message.reply_text("You don't have enough privileges!")
-                return
-            update.message.reply_text('Bot is restarting...')
+        if str(update.message.from_user.id) not in self.config['admin_list']:
+            update.message.reply_text("You don't have enough privileges!")
+            return
+        update.message.reply_text('Bot is restarting...')
         Thread(target=self.__stop_and_restart).start()
 
     def __upgrade_config(self):
@@ -143,10 +144,9 @@ class Bot:
             logging.info('Removing config.json...')
             os.remove('config.json')
 
-    def __print_help(self, bot, update, args):
-        bot.send_chat_action(chat_id=update.message.chat_id, action='typing')
+    def __print_help(self, update, context):
         help_text = ''
-        if not len(args):
+        if not len(context.args):
             help_text = '<b>Michael Tarassov Bot</b> <i>v' + self.version + "</i>\n" \
             + "\nBuilt-in commands:" \
             + "\n<b>/help</b>: Prints this information!" \
@@ -163,10 +163,10 @@ class Bot:
                 except AttributeError:
                     pass
         else:
-            if args[0] in self.plugin_list:
-                help_text = "<b>" + args[0] + "</b>"
+            if context.args[0] in self.plugin_list:
+                help_text = "<b>" + context.args[0] + "</b>"
                 for plugin in self.plugins:
-                    if plugin.__class__.__name__ == args[0]:
+                    if plugin.__class__.__name__ == context.args[0]:
                         try:
                             help_text += ": " + plugin.description
                         except AttributeError:

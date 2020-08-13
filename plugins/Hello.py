@@ -11,11 +11,11 @@ class Hello:
         self.description = "I'm a test plugin."
         self.help_text = "Write /hello to receive a very special greeting from me!"
 
-    def hello(self, bot, update, args):
+    def hello(self, update, context):
         update.message.reply_text(f'Hi {update.message.from_user.username}!')
         self.config['times_waved'] += 1
 
-    def on_text(self, bot, update):
+    def on_text(self, update, context):
         if 'hello' in update.message.text:
             update.message.reply_text(f"Hi! Echo: {update.message.text}")
             self.config['times_waved'] += 1
