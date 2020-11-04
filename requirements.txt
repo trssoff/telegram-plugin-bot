@@ -1,4 +1,4 @@
-PyYAML
-Requests
-telegram
-python-telegram-bot
+PyYAML==5.3.1
+Requests==2.22.0
+telegram==0.0.1
+python-telegram-bot==13.0
